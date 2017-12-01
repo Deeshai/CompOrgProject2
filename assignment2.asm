@@ -79,7 +79,7 @@ find_start_end:
     addi $t2, $t0, 1                    
     
   comma:
-    lb $t1, 0($t2)                      
+    lb $t1, 0($t2)                    
     beq $t1, 10, shift_left              
     beq $t1, 0, shift_left              
     bne $t1, 44, incr_last_ptr 
@@ -112,7 +112,8 @@ find_start_end:
     
     
 validity_check:
-    add $t2, $zero, $zero              
+    add $t2, $zero, $zero  
+                
 
   is_valid:
      
@@ -125,7 +126,6 @@ validity_check:
     bge $t1, 64, incrChar         
     bge $t1, 58, not_a_number         
     bge $t1, 47, incrChar         
-    beqz $t1, not_a_number
     j not_a_number
 
   incrChar:
@@ -245,28 +245,26 @@ subprogram3:
     jr $ra
 
   print_NaN:
-    la $a0, 44                    
-    li $v0, 11                                                                                            
-    syscall
+
     la $a0, error_msg                                               
     li $v0, 4                                                                        
+    syscall
+    la $a0, 44                   
+    li $v0, 11                                                                                           
     syscall
     jr $ra
 
   print_too_large:
-    la $a0, 44                    
-    li $v0, 11                                                                                            
-    syscall
     la $a0, too_large_msg            
     li $v0, 4
+    syscall
+    la $a0, 44                   
+    li $v0, 11                                                                                           
     syscall
     jr $ra
 
   print_decimal:
-    la $a0, 44                   
-    li $v0, 11                                                                                           
-    syscall
-
+   
 
     addi $t0, $zero, 10000      
     lw $t1, 0($sp)                        
@@ -287,5 +285,9 @@ subprogram3:
     add $a0, $zero, $t3                                                         
     li $v0, 1                                                                 
     syscall
+    la $a0, 44                   
+    li $v0, 11                                                                                           
+    syscall
+    
 
     jr $ra
