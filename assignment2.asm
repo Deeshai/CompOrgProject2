@@ -1,5 +1,5 @@
-# Deeshai Escoffery - 11/15/2017
-# Hexadecimal to Decimal Converter
+# Deeshai Escoffery
+
 
 #Begin
 
@@ -12,112 +12,280 @@
 	
 	
 .text
-
 main:
+    jal input_data
 
-	addi $t8, $zero, 16
-	addi $t3, $zero, 0
-	addi $t2 $zero, 0
+loop:
 
-	la $a0, input
-	li $v0, 4
-	syscall
-	
-	
-get_input:
-	la $a0, input
-	li $a1, 1001
-	li $v0, 8
-	syscall
-	
-	add $t0, $zero, $a0
+    jal find_start_end
+    
+    add $s0, $zero, $v0               
+    add $s1, $zero, $v1                
+    
+   
+    add $a0, $zero, $v0                
+    add $a1, $zero, $v1                
+    
+    jal validity_check
+    
+    
+    add $s2, $zero, $v0                 
+    add $s3, $zero, $v1                 
+    
+   
+    add $a0, $zero, $s0                 
+    add $a1, $zero, $s1                 
+    add $a2, $zero, $s3                
+    add $a3, $zero, $s2                
+    jal subprogram2
+    
+    
+    
+    add $a0, $zero, $s2                 
+    jal subprogram3                    
+    
+    addi $a0, $s1, 1                    
+    j loop
+    
+    
+  end:
+    li $v0, 10                         
+    syscall
 
-	li $t2, 0
-	li $t4, 0
-	li $s1, 0
-	
-getLocation:
-	lb $t1,0($t0)
-	beqz $t1, end
-	beq $t1, 10, end
-	beq $t1, 9, step
-	beq $t1, 32, step
-	beqz $t2, setFirstPointer
-	beq $t1, 44, setLastPointer
-	
-setFirstPointer:
-	add $t2, $zero, $t0
-	j step
-	
-	
-setLastPointer:
-	add $t4, $zero, $t0
-	add $s1, $zero, $t0
-	addi $t4, $t4, -1
-	j validateCurrWord
-	
-validateCurrWord:
-	lb $t1, 0($t2)
 
-	check_lower_maximum:
+  input_data:
+    la $a0, input                
+    li $v0, 4
+    syscall           
+                      
+    la $a0, input                                                                                 
+    li $a1, 1000                                                                
+    li $v0, 8                                                                 
+    syscall                             
+    
+    jr $ra
 
-	blt $t2, 103, check_lower_minimum		#If within max then jump to check if it is in the min.
-	j invalid_hex				#If outside then it is invalid.
-	
-	check_lower_minimum:
 
-	bgt $t2, 96, nextChar		#If withn min then jump to store decimal value.
-	j check_upper_maximum			#If less than min then check if uppercase.
-	
-	check_upper_maximum:
-	
-	blt $t2, 71, check_upper_minimum		#If withn min then jump to store decimal value.
-	j invalid_hex				#If outside then it is invalid
-	
-	check_upper_minimum:
+find_start_end:
+    add $t0, $zero, $a0                 
 
-	bgt $t2, 64, nextChar		#If withn min then jump to store decimal value.
-	j check_number_maximum				#If less than min then check if number.
-	
-	
-	check_number_maximum:
+  start:  
+    lb $t1, 0($t0)                      
+    beq $t1, 10, end            
+    beq $t1, 0, end            
+    beq $t1, 32, incr_start_ptr
+    beq $t1, 44, incr_start_ptr
+  
+    addi $t2, $t0, 1                    
+    
+  comma:
+    lb $t1, 0($t2)                      
+    beq $t1, 10, shift_left              
+    beq $t1, 0, shift_left              
+    bne $t1, 44, incr_last_ptr 
+  
+    addi $t2, $t2, -1                  
+    
+  shift_left:
+    lb $t1, 0($t2)                     
+    beq $t1, 32, decr_last_ptr         
+    beq $t1, 0, decr_last_ptr 
+    beq $t1, 10, decr_last_ptr 
 
-	blt $t2, 58, check_number_minimum		#If within max then check min.
-	j invalid_hex				#If outside of max then invalid.
-	
-	check_number_minimum:
+    add $v0, $zero, $t0                 
+    add $v1, $zero, $t2                 
+    jr $ra
 
-	bgt $t2, 47, nextChar		#If within min then jump to store decimal value.
-	j invalid_hex				#If outside of min then invalid.				
+  incr_start_ptr:
+    addi $t0, $t0, 1                    
+    j start
 
-invalid_hex:
-	li $t2, 0
-	li $t4, 0
-	li $s1, 0
+  incr_last_ptr:
+    addi $t2, $t2, 1                   
+    j comma
 
-	li $v0, 4
-	la $a0, too_large_msg
-	syscall
-	j getLocation
+  decr_last_ptr:
+    addi $t2, $t2, -1                   
+    j shift_left
 
-step:
-	addi $t0, $t0, 1
-	j getLocation
 
-nextChar:
-	addi $t3, $t3, 1
-	bgt $t3, 8, invalid_hex
-	addi $t2, $t2, 1
-	#beq $t2, $s1, subprogram2
+    
+    
+validity_check:
+    add $t2, $zero, $zero              
 
+  is_valid:
+     
+    lb $t1, 0($t0)                    
+     
+ 
+    bge $t1, 103, not_a_number           
+    bge $t1, 96, incrChar        
+    bge $t1, 71, not_a_number          
+    bge $t1, 64, incrChar         
+    bge $t1, 58, not_a_number         
+    bge $t1, 47, incrChar         
+    beqz $t1, not_a_number
+    j not_a_number
+
+  incrChar:
+    addi $t0, $t0, 1                    
+    addi $t2, $t2, 1                  
+    bgt $t0, $a1, valid                
+    j is_valid
+     
+  not_a_number:
+    addi $v0, $zero, 1                 
+    addi $v1, $zero, 0                 
+    jr $ra
+     
+  too_large:
+    addi $v0, $zero, 2                  
+    addi $v1, $zero, 0                 
+    jr $ra
+  
+  valid:
+    bgt $t2, 8, too_large      
+    addi $v0, $zero, 3                  
+    add $v1, $zero, $t2                 
+    jr $ra
+     
+return:
+    jr $ra  
+
+
+
+   
 
 subprogram1:
+    addi $v0, $zero, 1                 
+    addi $t3, $zero, 16                 
+
+  ascii_to_hex:
+    bge $a2, 96, lower                  
+    bge $a2, 64, upper                
+    bge $a2, 47, number                 
+
+  lower:
+    addi $t0, $a2, -87                  
+    j calc_exp
+
+  upper:
+    addi $t0, $a2, -55                 
+    j calc_exp
+
+  number:
+    addi $t0, $a2, -48                  
+    j calc_exp
+
+  calc_exp:
+    sub $t1, $a0, $a1                  
+    addi $t1, $t1, -1                   
+
+  raise_to_exp:
+    beq $t1, $zero, multiply            
+
+    mult $v0, $t3                      
+    mflo $v0                           
+
+    addi $t1, $t1, -1                   
+    j raise_to_exp
+
+  multiply:
+    mult $v0, $t0                     
+    mflo $v0                            
+
+    jr $ra                    
+
+
 
 subprogram2:
+    bne $a3, 3, return                  
+    add $t0, $zero, $a0                 
+    add $t1, $zero, $a1                 
+    add $t2, $zero, $a2                 
+    add $s6, $zero, $zero              
+    add $t4, $zero, $t0                 
+    add $t9, $zero, $zero               
 
-subprogram3:
+    
+    
+    add $s5, $zero, $ra                
+     
+  hexadecimal_conversion:     
+    
+    add $a0, $zero, $t2                 
+    add $a1, $zero, $s6                 
+    lb $a2, 0($t4)                      
 
-end:
+    jal subprogram1                    
+    
+    add $t9, $t9, $v0                   
 
-	li $v0, 10					#End program.
-	syscall
+    
+    addi $t4, $t4, 1                    
+    addi $s6, $s6, 1                   
+    
+    blt $s6, $t2, hexadecimal_conversion     
+  
+  done:
+    addi $sp, $sp, -4                  
+    sw $t9, 0($sp)                      
+
+    add $ra, $zero, $s5                 
+    jr $ra
+
+
+
+
+subprogram3:           
+    beq $a0, 1, print_NaN               
+    beq $a0, 2, print_too_large          
+    beq $a0, 3, print_decimal          
+    jr $ra
+
+  print_NaN:
+    la $a0, 44                    
+    li $v0, 11                                                                                            
+    syscall
+    la $a0, error_msg                                               
+    li $v0, 4                                                                        
+    syscall
+    jr $ra
+
+  print_too_large:
+    la $a0, 44                    
+    li $v0, 11                                                                                            
+    syscall
+    la $a0, too_large_msg            
+    li $v0, 4
+    syscall
+    jr $ra
+
+  print_decimal:
+    la $a0, 44                   
+    li $v0, 11                                                                                           
+    syscall
+
+
+    addi $t0, $zero, 10000      
+    lw $t1, 0($sp)                        
+    addi $sp, $sp, 4                                      
+     
+    divu $t1, $t0                         
+    mflo $t2                          
+    mfhi $t3                            
+    
+    beq $t2, $zero, print_remainder     
+    
+  print_quotient:
+    add $a0, $zero, $t2                                                      
+    li $v0, 1                                                                                            
+    syscall
+
+  print_remainder:
+    add $a0, $zero, $t3                                                         
+    li $v0, 1                                                                 
+    syscall
+
+    jr $ra
