@@ -10,17 +10,17 @@
 # $t2 - Track current byte.
 # $t3 - Track the length
 # $t4 - Track index
-# $s3 - Holds string's validity: 1- NaN, 2- Too Large, 3- 
+# $s3 - Holds string's validity: 1- NaN, 2- Too Large, 3- Decimal Value 
 # $s5 - Total sum
 
 .data
 
-	error_msg: .asciiz "NaN"    #error message for invalid hexadecimal
-	too_large_msg: .asciiz "too large"
-	output_line: .asciiz "\n"			  #stores new line for output
-	input: .space 1001				#space for characters (1000 + 1)
-	
-	
+    error_msg: .asciiz "NaN"    #error message for invalid hexadecimal
+    too_large_msg: .asciiz "too large"
+    output_line: .asciiz "\n"             #stores new line for output
+    input: .space 1001              #space for characters (1000 + 1)
+    
+    
 .text
 main:
     jal input_data
@@ -75,6 +75,25 @@ loop:
     
     jr $ra
 
+#find_start_end
+#Detects start and end of a string
+
+#Argument registers:
+#$a0 - Points to start of string
+
+#Temoporary registers:
+#$t0 - holds current location
+#$t1 - holds the byte at current location
+#$t2 - holds the end of the string
+
+#Return Registers:
+#$v0 - Start of string pointer
+#$v1 - End of string pointer
+
+#$v0 contains the return value.
+#Returns the decimal value of the character in $
+#Called by subprogram2, but doesn't call any other function
+
 
 find_start_end:
     add $t0, $zero, $a0                 
@@ -119,7 +138,20 @@ find_start_end:
     j shift_left
 
 
-    
+ #validity_check
+#Checks if a string is a valid hexadecimal (Both 8 characters or less and more than 8 characters)
+
+#Argument registers used:
+#$a0 - Start of the string pointer
+#$a1 - End of the string pointer
+
+#Temporary registers:
+#$t0 - current position pointer
+#$t1 - current positon of byte
+#$t2 - current character index
+
+#Return registers:
+#$v0 - String's validity.   
     
 validity_check:
     add $t2, $zero, $zero  
@@ -164,7 +196,18 @@ return:
     jr $ra  
 
 
+#subprogram1
+#Assuming that the hex character is valid, it is converted to a decimal.
 
+#Argument registers:
+#$a0 - Length.
+#$a1 - Character index.
+#$a2 - ASCII char.
+
+#Temporary registers:
+#$t0 - hexadecimal value
+#$t1 - exponent
+#$t3 - Holds decimal value of base 16.
    
 
 subprogram1:
@@ -207,7 +250,23 @@ subprogram1:
 
     jr $ra                    
 
+#subprogram2
+#Converts hexadecimal string to a decimal.
+#Calls subprogram1, and adds the value of each converted character to a sum. The total value is then returned.
 
+#Argument registers:
+#$a0 - Start of string pointer
+#$a1 - End of string pointers
+#$a2 - Length.
+#$a3 - String's validity
+
+#Temporary registers:
+#$t0 - Start of string pointer.
+#$t1 - End of string pointer.
+#$t2 - Length.
+#$t4 - Current position pointer
+#$t9 - Decimal value of char.
+#$s6 - Character index.
 
 subprogram2:
     bne $a3, 3, return                  
@@ -245,6 +304,18 @@ subprogram2:
     add $ra, $zero, $s5                 
     jr $ra
 
+#subprogram3
+#Displays results (decimal or NaN message or too large message)
+
+#Argument registers:
+#$a0 - Current string's validity.
+#$sp - String's decimal value.
+
+#Temporary registers:
+#$t1 - Stores decimal constant 10000.
+#$t2 - Decimal value of hex.
+#$t3 - Quotient.
+#$t4 - Remainder.
 
 
 
