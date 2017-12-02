@@ -3,6 +3,16 @@
 
 #Begin
 
+# $s0 - Address of first character in input.
+# $s2 - Address of start of current string.
+# $s4 - Address of end of current string.
+# $s1 - Track the length of the current string.
+# $t2 - Track current byte.
+# $t3 - Track the length
+# $t4 - Track index
+# $s3 - Holds string's validity: 1- NaN, 2- Too Large, 3- 
+# $s5 - Total sum
+
 .data
 
 	error_msg: .asciiz "NaN"    #error message for invalid hexadecimal
