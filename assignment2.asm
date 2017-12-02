@@ -3,15 +3,16 @@
 
 #Begin
 
-# $s0 - Address of first character in input.
-# $s2 - Address of start of current string.
-# $s4 - Address of end of current string.
-# $s1 - Track the length of the current string.
-# $t2 - Track current byte.
-# $t3 - Track the length
-# $t4 - Track index
+#Temporary Registers:
+# $s0 - Character's first address in input.
+# $s2 - Current string's start address.
+# $s4 - Current string's end address.
+# $s1 - Current string'd length is tracked her.
+# $t2 -Current byte is tracked here.
+# $t3 - The length is tracked here
+# $t4 - Index is tracked here
 # $s3 - Holds string's validity: 1- NaN, 2- Too Large, 3- Decimal Value 
-# $s5 - Total sum
+# $s5 - Total sum is stored here
 
 .data
 
@@ -23,43 +24,47 @@
     
 .text
 main:
-    jal input_data
+    jal input_data  #jump and link input_data to main
 
 loop:
 
-    jal find_start_end
+    jal find_start_end  #jump and link find_start_end to loop
     
-    add $s0, $zero, $v0               
-    add $s1, $zero, $v1                
-    
-   
-    add $a0, $zero, $v0                
-    add $a1, $zero, $v1                
-    
-    jal validity_check
-    
-    
-    add $s2, $zero, $v0                 
-    add $s3, $zero, $v1                 
+    add $s0, $zero, $v0           #start pointer is stored here    
+    add $s1, $zero, $v1          #end point is stored here      
     
    
-    add $a0, $zero, $s0                 
-    add $a1, $zero, $s1                 
-    add $a2, $zero, $s3                
-    add $a3, $zero, $s2                
-    jal subprogram2
+   #Set register arguments for validity_check
+   
+    add $a0, $zero, $v0                #$a0 is set to start pointer
+    add $a1, $zero, $v1                #$a1 is set to end pointer
+    
+    jal validity_check 			#jump and link validity_check to loop
     
     
+    add $s2, $zero, $v0    		#Validity of string is stored.             
+    add $s3, $zero, $v1                 #Length of string is stored.
     
-    add $a0, $zero, $s2                 
-    jal subprogram3                    
+   #Set register argument for subprogram2
+   
+    add $a0, $zero, $s0              #$a0 is set to start pointer.   
+    add $a1, $zero, $s1               #$a1 is set to end pointer.  
+    add $a2, $zero, $s3                #$a2 is set to string length.
+    add $a3, $zero, $s2                #$a3 is set to string validity.
+    jal subprogram2			#jump and link to subprogram2 to loop
     
-    addi $a0, $s1, 1                    
-    j loop
+    
+ #Set register argument for subprogram3
+    
+    add $a0, $zero, $s2       		#$a0 is set to string validity           
+    jal subprogram3                     #jump and link to subprgam3 to loop
+    
+    addi $a0, $s1, 1     		#Start pointer = End pointer               
+    j loop				#Jump to beginning of loop
     
     
-  end:
-    li $v0, 10                         
+  end:					#end program
+    li $v0, 10                         #end
     syscall
 
 
@@ -75,7 +80,7 @@ loop:
     
     jr $ra
 
-#find_start_end
+#####################find_start_end#########################
 #Detects start and end of a string
 
 #Argument registers:
@@ -90,55 +95,56 @@ loop:
 #$v0 - Start of string pointer
 #$v1 - End of string pointer
 
-#$v0 contains the return value.
-#Returns the decimal value of the character in $
-#Called by subprogram2, but doesn't call any other function
+#Pre: None
+#Post: $v0 contains the return value.
+#Called by: subprogram2
+#Calls: None
 
 
 find_start_end:
-    add $t0, $zero, $a0                 
+    add $t0, $zero, $a0       #$t0 is set to the start of the string             
 
   start:  
-    lb $t1, 0($t0)                      
-    beq $t1, 10, end            
-    beq $t1, 0, end            
-    beq $t1, 32, incr_start_ptr
-    beq $t1, 44, incr_start_ptr
+    lb $t1, 0($t0)     		#Load char at the start.                 
+    beq $t1, 10, end         	#New line = end programming.   
+    beq $t1, 0, end            		#Null Character = end program.
+    beq $t1, 32, incr_start_ptr		#Space = shift right.
+    beq $t1, 44, incr_start_ptr		#Comma = shift right.
   
-    addi $t2, $t0, 1                    
+    addi $t2, $t0, 1  			#End pointer = start pointer + 1.                  
     
-  comma:
-    lb $t1, 0($t2)                    
-    beq $t1, 10, shift_left              
-    beq $t1, 0, shift_left              
-    bne $t1, 44, incr_last_ptr 
+  comma:				#Find comma
+    lb $t1, 0($t2) 			#Character at end is loaded        		           
+    beq $t1, 10, shift_left              #If new line, shift left/ step back.
+    beq $t1, 0, shift_left              #If null/0, shift left.
+    bne $t1, 44, incr_last_ptr          #If not a comma, shift right/step forward.
   
-    addi $t2, $t2, -1                  
+    addi $t2, $t2, -1                  #Endpointer = Endpointer - 1 (Decrement end pointer)
     
   shift_left:
-    lb $t1, 0($t2)                     
-    beq $t1, 32, decr_last_ptr         
-    beq $t1, 0, decr_last_ptr 
-    beq $t1, 10, decr_last_ptr 
+    lb $t1, 0($t2)   			#Character is loaded at end pointer.                  
+    beq $t1, 32, decr_last_ptr         #If space, decrement end pointer.
+    beq $t1, 0, decr_last_ptr 		#If null, decrement end pointer.
+    beq $t1, 10, decr_last_ptr 		#If new line, decrement pointer.
 
-    add $v0, $zero, $t0                 
-    add $v1, $zero, $t2                 
+    add $v0, $zero, $t0              #$v0 is set to start pointer.           
+    add $v1, $zero, $t2              #$v1 is set to end pointer.
     jr $ra
 
   incr_start_ptr:
-    addi $t0, $t0, 1                    
-    j start
+    addi $t0, $t0, 1   			#StartPointer = StartPointer + 1 (Increment start pointer)                 
+    j start				#jump to start
 
-  incr_last_ptr:
-    addi $t2, $t2, 1                   
-    j comma
+  incr_last_ptr:		
+    addi $t2, $t2, 1            	#EndPointer = EndPointer + 1  (Increment end pointer)     
+    j comma				#jump to comma
 
   decr_last_ptr:
-    addi $t2, $t2, -1                   
-    j shift_left
+    addi $t2, $t2, -1       		#EndPointer = EndPointer - 1 (Decrement end pointer)            
+    j shift_left			#jump to shift_left
 
 
- #validity_check
+ ######################validity_check##########################
 #Checks if a string is a valid hexadecimal (Both 8 characters or less and more than 8 characters)
 
 #Argument registers used:
@@ -152,48 +158,53 @@ find_start_end:
 
 #Return registers:
 #$v0 - String's validity.   
+
+#Pre: None
+#Post: $v0 contains the return value, $v1 contains the length of string
+#Called by: main
+#Calls: None
     
 validity_check:
-    add $t2, $zero, $zero  
+    add $t2, $zero, $zero    #$t2 is initialized to 0.
                 
 
   is_valid:
      
-    lb $t1, 0($t0)                    
+    lb $t1, 0($t0)      #Byte is loaded at $t0.               
      
- 
-    bge $t1, 103, not_a_number           
-    bge $t1, 96, incrChar        
-    bge $t1, 71, not_a_number          
-    bge $t1, 64, incrChar         
-    bge $t1, 58, not_a_number         
-    bge $t1, 47, incrChar         
-    j not_a_number
+ #Check character validity
+    bge $t1, 103, not_a_number    #if greater than 103, not a number.       
+    bge $t1, 96, incrChar        #if greater than 96, valid lower case.
+    bge $t1, 71, not_a_number     #if greater than 71, not a number.     
+    bge $t1, 64, incrChar         #if greater than 64, valid uppercase.
+    bge $t1, 58, not_a_number      #if greater than 58, not a number.   
+    bge $t1, 47, incrChar         #if greater than 47, valid number
+    j not_a_number			#jump to not_a_number
 
   incrChar:
-    addi $t0, $t0, 1                    
-    addi $t2, $t2, 1                  
-    bgt $t0, $a1, valid                
-    j is_valid
+    addi $t0, $t0, 1           		#Increment pointer.         
+    addi $t2, $t2, 1                  	#Increment index.
+    bgt $t0, $a1, valid                #If pointer is past end, then string is valid hex.
+    j is_valid				#Jump to hex.
      
   not_a_number:
-    addi $v0, $zero, 1                 
-    addi $v1, $zero, 0                 
-    jr $ra
+    addi $v0, $zero, 1              #Validity set   
+    addi $v1, $zero, 0               #Length = 0  
+    jr $ra				#jump to register $ra.
      
   too_large:
-    addi $v0, $zero, 2                  
-    addi $v1, $zero, 0                 
-    jr $ra
+    addi $v0, $zero, 2       	#Validity set           
+    addi $v1, $zero, 0           #Length = 0      
+    jr $ra			#jump to register $ra
   
   valid:
-    bgt $t2, 8, too_large      
-    addi $v0, $zero, 3                  
-    add $v1, $zero, $t2                 
-    jr $ra
+    bgt $t2, 8, too_large      #If length greater than 8, it is a valid hex that is too large/long.
+    addi $v0, $zero, 3          #Validity set        
+    add $v1, $zero, $t2          #Length set to $t2.       
+    jr $ra			#jump to register $ra.
      
-return:
-    jr $ra  
+return:				#returns decimal value
+    jr $ra  			#jumps to register $ra.
 
 
 #subprogram1
@@ -208,47 +219,51 @@ return:
 #$t0 - hexadecimal value
 #$t1 - exponent
 #$t3 - Holds decimal value of base 16.
-   
+
+#Pre: None
+#Post: $v0 contains the return value.
+#Called by: subprogram2
+#Calls: None
 
 subprogram1:
-    addi $v0, $zero, 1                 
-    addi $t3, $zero, 16                 
+    addi $v0, $zero, 1     #$v0 is initialized to 1            
+    addi $t3, $zero, 16     #$t3 is initialized to 16            
 
   ascii_to_hex:
-    bge $a2, 96, lower                  
-    bge $a2, 64, upper                
-    bge $a2, 47, number                 
+    bge $a2, 96, lower     	  #If branch is lowercase, jump to lower           
+    bge $a2, 64, upper              #if branch is upercase, jump to lower  
+    bge $a2, 47, number                #if branch is number, jump to number 
 
   lower:
-    addi $t0, $a2, -87                  
-    j calc_exp
+    addi $t0, $a2, -87        		#Decimal value is stored in $t0.          
+    j calc_exp				#Jump to calc_exp
 
   upper:
-    addi $t0, $a2, -55                 
-    j calc_exp
+    addi $t0, $a2, -55                 #Decimal values is stored in $t0.
+    j calc_exp				#Jump to calc_exp
 
   number:
-    addi $t0, $a2, -48                  
-    j calc_exp
+    addi $t0, $a2, -48                  #Decimal values is stored $t0.
+    j calc_exp				#Jump to calc_exp
 
   calc_exp:
-    sub $t1, $a0, $a1                  
-    addi $t1, $t1, -1                   
+    sub $t1, $a0, $a1                  #Exponent = length - index
+    addi $t1, $t1, -1                  #Expontent = Exponent - 1 
 
   raise_to_exp:
-    beq $t1, $zero, multiply            
+    beq $t1, $zero, multiply            #If Exponent = 0, move forward
 
-    mult $v0, $t3                      
-    mflo $v0                           
+    mult $v0, $t3                      #Exponent * Base
+    mflo $v0                           #$v0 stores the answer
 
-    addi $t1, $t1, -1                   
-    j raise_to_exp
+    addi $t1, $t1, -1                   #Exponent = Exponent - 1
+    j raise_to_exp			#Jump to raise_to_exp
 
   multiply:
-    mult $v0, $t0                     
-    mflo $v0                            
-
-    jr $ra                    
+    mult $v0, $t0                     #(Base^exponent) * decimal (Base rased to exponent * decimal value)
+    mflo $v0                          #$v0 stores the result
+			
+    jr $ra                    		#jump to register $ra.
 
 #subprogram2
 #Converts hexadecimal string to a decimal.
@@ -268,41 +283,49 @@ subprogram1:
 #$t9 - Decimal value of char.
 #$s6 - Character index.
 
+#Pre: None
+#Post: $sp contains the return value.
+#Returns: the decimal value of the hexadecimal string.
+#Called by: main
+#Calls: subprogram1
+
 subprogram2:
-    bne $a3, 3, return                  
-    add $t0, $zero, $a0                 
-    add $t1, $zero, $a1                 
-    add $t2, $zero, $a2                 
-    add $s6, $zero, $zero              
-    add $t4, $zero, $t0                 
-    add $t9, $zero, $zero               
+    bne $a3, 3, return      #If not valid then return            
+    add $t0, $zero, $a0      #Copy pointer to string's start           
+    add $t1, $zero, $a1      #Copy pointer to string's end           
+    add $t2, $zero, $a2       #Length of string is copied          
+    add $s6, $zero, $zero      #Index initialized to 0.        
+    add $t4, $zero, $t0         #Pointer set to current position.        
+    add $t9, $zero, $zero       #Decimal value is initialized        
 
     
     
-    add $s5, $zero, $ra                
+    add $s5, $zero, $ra          #Preserve the return address. Calls start_end_function.      
      
-  hexadecimal_conversion:     
+  hexadecimal_conversion: 
+  
+      #Set arguments ofr subprogram1    
     
-    add $a0, $zero, $t2                 
-    add $a1, $zero, $s6                 
-    lb $a2, 0($t4)                      
+    add $a0, $zero, $t2     #$a0 stores length.            
+    add $a1, $zero, $s6      #$a1 stores index.           
+    lb $a2, 0($t4)            #Current character is called in $a2.          
 
-    jal subprogram1                    
+    jal subprogram1   		#Call subprogram1.                 
     
-    add $t9, $t9, $v0                   
+    add $t9, $t9, $v0                  #Store results from subprogram1. 
 
     
-    addi $t4, $t4, 1                    
-    addi $s6, $s6, 1                   
+    addi $t4, $t4, 1                   #Index = index + 1 
+    addi $s6, $s6, 1                   #Move pointer forward.
     
-    blt $s6, $t2, hexadecimal_conversion     
+    blt $s6, $t2, hexadecimal_conversion    #If index < length, then jump to hexadecimal_conversion.  
   
   done:
-    addi $sp, $sp, -4                  
-    sw $t9, 0($sp)                      
+    addi $sp, $sp, -4            #4 bytes space are allocated on stack      
+    sw $t9, 0($sp)                #Sum is pused onto stack      
 
-    add $ra, $zero, $s5                 
-    jr $ra
+    add $ra, $zero, $s5             #Return address is reset    
+    jr $ra				#jump to register $ra
 
 #subprogram3
 #Displays results (decimal or NaN message or too large message)
@@ -316,59 +339,63 @@ subprogram2:
 #$t2 - Decimal value of hex.
 #$t3 - Quotient.
 #$t4 - Remainder.
+#Pre: None
+#Post: None
+#Returns: None
+#Called by: main
+#Calls: None
 
 
 
 subprogram3:           
-    beq $a0, 1, print_NaN               
-    beq $a0, 2, print_too_large          
-    beq $a0, 3, print_decimal          
-    jr $ra
+    beq $a0, 1, print_NaN               #If validity = 1, jump to print_NaN
+    beq $a0, 2, print_too_large          #If validity = 2, jump to pint_too_large.
+    beq $a0, 3, print_decimal          #If validity = 3, jump to print_decimal.
+    jr $ra				#jump to register $ra.
 
   print_NaN:
 
-    la $a0, error_msg                                               
+    la $a0, error_msg                     #Print error_msg                         
     li $v0, 4                                                                        
     syscall
-    la $a0, 44                   
+    la $a0, 44                   #Print comma
     li $v0, 11                                                                                           
     syscall
-    jr $ra
+    jr $ra				#jump to register $rs
 
   print_too_large:
-    la $a0, too_large_msg            
+    la $a0, too_large_msg            #Print too_large_msg
     li $v0, 4
     syscall
-    la $a0, 44                   
+    la $a0, 44                   #Print comma
     li $v0, 11                                                                                           
     syscall
-    jr $ra
+    jr $ra			#jump to register $rs
 
   print_decimal:
-   
-
-    addi $t0, $zero, 10000      
-    lw $t1, 0($sp)                        
-    addi $sp, $sp, 4                                      
+  
+    addi $t0, $zero, 10000     #Store 10000 in $t0
+    lw $t1, 0($sp)               #Decimal is loaded from stack.         
+    addi $sp, $sp, 4              #The space onth stack is deallocated.                        
      
-    divu $t1, $t0                         
-    mflo $t2                          
-    mfhi $t3                            
+    divu $t1, $t0                    #Split hex in two by dividing unisgned integer by 10000     
+    mflo $t2                         #Save quotient in mflo 
+    mfhi $t3                          #Save remainder in mfhi 
     
-    beq $t2, $zero, print_remainder     
+    beq $t2, $zero, print_remainder     #If quotient = 0, print remainder only 
     
   print_quotient:
-    add $a0, $zero, $t2                                                      
-    li $v0, 1                                                                                            
+    add $a0, $zero, $t2                 #Print quotient                                   
+    li $v0, 1                                                                                        
     syscall
 
   print_remainder:
-    add $a0, $zero, $t3                                                         
+    add $a0, $zero, $t3                 #Print remainder                                        
     li $v0, 1                                                                 
     syscall
-    la $a0, 44                   
+    la $a0, 44                   #Print comma
     li $v0, 11                                                                                           
     syscall
     
 
-    jr $ra
+    jr $ra				#jump to register $rs
